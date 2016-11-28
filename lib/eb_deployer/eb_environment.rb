@@ -86,6 +86,10 @@ module EbDeployer
       @creation_opts[:cname_prefix]
     end
 
+    def timeout_for_env_become_healthy
+      @creation_opts[:timeout_for_env_become_healthy]
+    end
+
     def create_eb_env(settings, version_label)
       solution_stack = @creation_opts[:solution_stack]
       tags = convert_tags_hash_to_array(@creation_opts.delete(:tags))
@@ -158,7 +162,7 @@ module EbDeployer
     end
 
     def wait_for_env_status_to_be_ready
-      Timeout.timeout(600) do
+      Timeout.timeout(timeout_for_env_become_healthy) do
         current_status = @bs.environment_status(@app, @name)
 
         while current_status.downcase != 'ready'
@@ -172,7 +176,7 @@ module EbDeployer
     end
 
     def wait_for_env_become_healthy
-      Timeout.timeout(600) do
+      Timeout.timeout(timeout_for_env_become_healthy) do
         current_health_status = @bs.environment_health_state(@app, @name)
         while !@accepted_healthy_states.include?(current_health_status)
           log("health status: #{current_health_status}")
@@ -193,7 +197,8 @@ module EbDeployer
         :solution_stack => "64bit Amazon Linux 2014.09 v1.1.0 running Tomcat 7 Java 7",
         :smoke_test =>  Proc.new {},
         :tier => 'WebServer',
-        :accepted_healthy_states => ['Green']
+        :accepted_healthy_states => ['Green'],
+        :timeout_for_env_become_healthy => 600
       }
     end
 
